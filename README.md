@@ -1,9 +1,5 @@
 <p align="center">
-  <img 
-    src="https://raw.githubusercontent.com/lopesdevi/orbia-pay-sua-convers-o-turbo/main/src/assets/logos/orbyon-pay-logo.png"
-    alt="Orbyon Pay"
-    width="280"
-  />
+  <img src="https://i.imgur.com/d4K58Fl.jpeg" alt="Orbyon Pay" width="280" />
 </p>
 
 
