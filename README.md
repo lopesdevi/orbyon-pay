@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="https://cdn.discordapp.com/attachments/1291642266829459487/1458875321141952756/orbyon-pay-logo.png" alt="Orbyon Pay" width="280" />
+  <img src="https://cdn.discordapp.com/attachments/1291642266829459487/1458875321141952756/orbyon-pay-logo.png?ex=69613b05&is=695fe985&hm=450c69ac9e0d2e39dde407fd83d75847478972e9ddebd53d97a86f699974bb9e&" alt="Orbyon Pay" width="280" />
 </p>
 
 
