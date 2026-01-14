@@ -18,7 +18,8 @@
 </p>
 
 <p align="center">
-  <img src="https://img.shields.io/badge/Efí_Bank-Pix_&_Cartão-00D4AA?style=flat-square" alt="Efí Bank" />
+  <img src="https://img.shields.io/badge/MultiPSP-Architecture-00D4AA?style=flat-square" alt="MultiPSP" />
+  <img src="https://img.shields.io/badge/Pix_&_Cartão-Payments-635BFF?style=flat-square" alt="Payments" />
   <img src="https://img.shields.io/badge/mTLS-Secured-00D4AA?style=flat-square" alt="mTLS" />
   <img src="https://img.shields.io/badge/PCI_DSS-Compliant-success?style=flat-square" alt="PCI DSS" />
   <img src="https://img.shields.io/badge/LGPD-Compliant-success?style=flat-square" alt="LGPD" />
@@ -28,7 +29,7 @@
 
 ## 📌 Apresentação
 
-A **Orbyon Pay** é uma plataforma de pagamentos digitais desenvolvida para atender vendedores, empreendedores e negócios que operam no ambiente digital brasileiro. Nossa solução oferece processamento de pagamentos via **Pix** e **Cartão de Crédito** através da integração exclusiva com a **Efí Bank**, com foco em segurança, velocidade e experiência do usuário.
+A **Orbyon Pay** é uma plataforma de pagamentos digitais desenvolvida para atender vendedores, empreendedores e negócios que operam no ambiente digital brasileiro. Nossa solução oferece processamento de pagamentos via **Pix** e **Cartão de Crédito** através de uma **arquitetura MultiPSP** (Multi Payment Service Provider), permitindo integração com múltiplos provedores de pagamento de forma transparente, com foco em segurança, velocidade, resiliência e experiência do usuário.
 
 ### O que a Orbyon Pay resolve?
 
@@ -45,11 +46,13 @@ O mercado de pagamentos digitais no Brasil ainda enfrenta desafios como taxas el
 
 ### Diferenciais
 
+- ✅ **Arquitetura MultiPSP** — integração com múltiplos provedores para redundância e melhores taxas
 - ✅ **Taxas competitivas e transparentes** — sem surpresas ou cobranças ocultas
 - ✅ **Liberação rápida de saldo** — opções flexíveis de saque (Turbo e Flex)
 - ✅ **Suporte humanizado** — atendimento real, não robôs
 - ✅ **Painel completo** — gestão de vendas, relatórios, disputas e operações financeiras
 - ✅ **Política FairPlay Pró-Vendedor** — proteção contra abusos de contestação
+- ✅ **Roteamento inteligente** — escolha automática do melhor PSP por transação
 
 ---
 
@@ -83,13 +86,24 @@ O mercado de pagamentos digitais no Brasil ainda enfrenta desafios como taxas el
 | **Prisma** | ORM type-safe para interação com banco de dados |
 | **Zod** | Validação de schemas e sanitização de dados |
 
-### Integração de Pagamentos — Efí Bank
+### Arquitetura MultiPSP (Multi Payment Service Provider)
+
+A Orbyon Pay implementa uma arquitetura de múltiplos provedores de pagamento, permitindo:
+
+| Capacidade | Descrição |
+|------------|----------|
+| **Redundância** | Failover automático entre PSPs em caso de indisponibilidade |
+| **Roteamento Inteligente** | Escolha do melhor PSP por tipo de transação, taxa ou disponibilidade |
+| **Negociação de Taxas** | Flexibilidade para negociar melhores condições com cada provedor |
+| **Expansão Facilitada** | Novos PSPs podem ser adicionados via adaptadores padronizados |
+
+### Modalidades de Pagamento
 
 | Modalidade | Recursos |
 |------------|----------|
-| **Pix** | Cobrança imediata, QR Code dinâmico, Pix Copia e Cola, Webhooks em tempo real |
-| **Cartão de Crédito** | Tokenização segura, parcelamento, antifraude integrado, 3D Secure |
-| **Infraestrutura** | mTLS (Mutual TLS), certificados de produção, ambiente sandbox para testes |
+| **Pix** | Cobrança imediata, QR Code dinâmico, Pix Copia e Cola, Webhooks em tempo real, Devolução |
+| **Cartão de Crédito** | Tokenização segura, parcelamento (1-12x), antifraude integrado, 3D Secure 2.0 |
+| **Infraestrutura** | mTLS (Mutual TLS), certificados por PSP, ambiente sandbox para testes |
 
 ### Infraestrutura & DevOps
 
@@ -161,12 +175,31 @@ O mercado de pagamentos digitais no Brasil ainda enfrenta desafios como taxas el
 │  └───────────────────────────────────────────────────────┘    │
 └───────────────────────────────────────────────────────────────┘
                                 │
-            ┌───────────────────┼───────────────────┐
-            ▼                   ▼                   ▼
-┌─────────────────────────────────────────────┐  ┌───────────────────┐
-│              Efí Bank API                   │  │    Infobip API    │
-│   (Pix + Cartão de Crédito via mTLS)        │  │    (WhatsApp)     │
-└─────────────────────────────────────────────┘  └───────────────────┘
+                                ▼
+┌───────────────────────────────────────────────────────────────┐
+│                    CAMADA MultiPSP                            │
+│  ┌─────────────────────────────────────────────────────────┐  │
+│  │              PSP Router (Roteamento Inteligente)        │  │
+│  │   • Seleção por disponibilidade, taxa, tipo de Tx       │  │
+│  │   • Failover automático entre provedores                │  │
+│  │   • Circuit breaker por PSP                             │  │
+│  └─────────────────────────────────────────────────────────┘  │
+│                                │                              │
+│       ┌────────────────────────┼────────────────────────┐     │
+│       ▼                        ▼                        ▼     │
+│  ┌─────────────┐         ┌─────────────┐         ┌──────────┐ │
+│  │  Adapter A  │         │  Adapter B  │         │ Adapter N│ │
+│  │  (PSP #1)   │         │  (PSP #2)   │         │ (PSP #N) │ │
+│  └─────────────┘         └─────────────┘         └──────────┘ │
+└───────────────────────────────────────────────────────────────┘
+                                │
+       ┌────────────────────────┼────────────────────────┐
+       ▼                        ▼                        ▼
+┌─────────────────┐    ┌─────────────────┐    ┌─────────────────┐
+│    PSP #1       │    │    PSP #2       │    │    PSP #N       │
+│  (Pix + Card)   │    │  (Pix + Card)   │    │  (Pix + Card)   │
+│   via mTLS      │    │   via mTLS      │    │   via mTLS      │
+└─────────────────┘    └─────────────────┘    └─────────────────┘
 ```
 
 ### 🖥️ Frontend (Single Page Application)
@@ -179,15 +212,17 @@ Interface moderna construída com React e otimizada para performance:
 - **Landing Page** — apresentação institucional com tema dinâmico (Dark Premium)
 - **Status Page** — transparência sobre disponibilidade dos serviços
 
-### ⚙️ Backend (Edge Functions + API)
+### ⚙️ Backend (Edge Functions + API + MultiPSP)
 
-Processamento distribuído entre funções serverless e API dedicada:
+Processamento distribuído entre funções serverless, API dedicada e camada de abstração de PSPs:
 
 | Componente | Responsabilidade |
 |------------|------------------|
 | **Edge Functions** | Operações rápidas: auth, webhooks, notificações, validações |
 | **Fastify API** | Lógica de negócio complexa, integrações financeiras, antifraude |
-| **Proxy mTLS** | Comunicação segura com Efí Bank (certificados mútuos) |
+| **PSP Router** | Roteamento inteligente entre provedores de pagamento |
+| **PSP Adapters** | Adaptadores padronizados para cada provedor (interface unificada) |
+| **Proxy mTLS** | Comunicação segura com PSPs (certificados mútuos por provedor) |
 
 ### 🗄️ Banco de Dados
 
@@ -206,13 +241,22 @@ audit_logs        → Registro imutável de ações
 
 ---
 
-## 🗺️ Mapa de Operação — Integração Efí Bank
+## 🗺️ Mapa de Operação — Arquitetura MultiPSP
+
+### O que é MultiPSP?
+
+A arquitetura **MultiPSP** (Multi Payment Service Provider) permite que a Orbyon Pay se conecte a múltiplos provedores de pagamento simultaneamente, oferecendo:
+
+- **Alta disponibilidade** — se um PSP estiver indisponível, o sistema roteia automaticamente para outro
+- **Otimização de custos** — escolha do PSP com melhor taxa para cada tipo de transação
+- **Flexibilidade comercial** — negociação independente com cada provedor
+- **Escalabilidade** — novos PSPs podem ser adicionados sem alteração no core da aplicação
 
 ### Visão Geral do Fluxo
 
 ```
 ┌─────────────────────────────────────────────────────────────────────────────┐
-│                           ORBYON PAY × EFÍ BANK                             │
+│                         ORBYON PAY — MultiPSP                               │
 │                        Mapa de Operação Completo                            │
 └─────────────────────────────────────────────────────────────────────────────┘
 
@@ -241,27 +285,51 @@ audit_logs        → Registro imutável de ações
 │  └─────────────────────────────────────────────────────────────────────┘    │
 │                                       │                                     │
 │  ┌─────────────────────────────────────────────────────────────────────┐    │
+│  │                    PSP ROUTER (Roteamento Inteligente)              │    │
+│  │  ┌─────────────────────────────────────────────────────────────┐    │    │
+│  │  │  • Seleção por disponibilidade (health check)               │    │    │
+│  │  │  • Seleção por taxa (custo-benefício)                       │    │    │
+│  │  │  • Seleção por tipo de transação (Pix/Cartão)               │    │    │
+│  │  │  • Circuit breaker por PSP (proteção contra falhas)         │    │    │
+│  │  │  • Failover automático (retry em PSP alternativo)           │    │    │
+│  │  └─────────────────────────────────────────────────────────────┘    │    │
+│  └─────────────────────────────────────────────────────────────────────┘    │
+│                                       │                                     │
+│  ┌─────────────────────────────────────────────────────────────────────┐    │
+│  │                    PSP ADAPTERS (Interface Unificada)               │    │
+│  │  ┌─────────────┐  ┌─────────────┐  ┌─────────────┐  ┌────────────┐  │    │
+│  │  │  Adapter A  │  │  Adapter B  │  │  Adapter C  │  │ Adapter N  │  │    │
+│  │  │  (PSP #1)   │  │  (PSP #2)   │  │  (PSP #3)   │  │ (PSP #N)   │  │    │
+│  │  └─────────────┘  └─────────────┘  └─────────────┘  └────────────┘  │    │
+│  └─────────────────────────────────────────────────────────────────────┘    │
+│                                       │                                     │
+│  ┌─────────────────────────────────────────────────────────────────────┐    │
 │  │                    PROXY mTLS (AWS EC2)                             │    │
 │  │  ┌─────────────────────────────────────────────────────────────┐    │    │
-│  │  │  Certificados de Produção Efí (client.p12 + ca.pem)         │    │    │
+│  │  │  Certificados de Produção por PSP (client.p12 + ca.pem)     │    │    │
 │  │  │  Autenticação Mútua TLS 1.2+                                │    │    │
 │  │  │  Retry com Backoff Exponencial                              │    │    │
 │  │  └─────────────────────────────────────────────────────────────┘    │    │
 │  └─────────────────────────────────────────────────────────────────────┘    │
 └─────────────────────────────────────────────────────────────────────────────┘
                                        │
-                                       ▼
-┌─────────────────────────────────────────────────────────────────────────────┐
-│                            EFÍ BANK API                                     │
-│  ┌───────────────────────────────┐  ┌───────────────────────────────────┐   │
-│  │         PIX                   │  │       CARTÃO DE CRÉDITO           │   │
-│  │  • Cobrança Imediata (cob)    │  │  • Tokenização Segura             │   │
-│  │  • QR Code Dinâmico           │  │  • Parcelamento (1-12x)           │   │
-│  │  • Pix Copia e Cola           │  │  • 3D Secure 2.0                  │   │
-│  │  • Devolução (refund)         │  │  • Antifraude Integrado           │   │
-│  │  • Consulta de Status         │  │  • Captura/Cancelamento           │   │
-│  └───────────────────────────────┘  └───────────────────────────────────┘   │
-└─────────────────────────────────────────────────────────────────────────────┘
+          ┌────────────────────────────┼────────────────────────────┐
+          ▼                            ▼                            ▼
+┌─────────────────────┐    ┌─────────────────────┐    ┌─────────────────────┐
+│      PSP #1         │    │      PSP #2         │    │      PSP #N         │
+│  ┌───────────────┐  │    │  ┌───────────────┐  │    │  ┌───────────────┐  │
+│  │     PIX       │  │    │  │     PIX       │  │    │  │     PIX       │  │
+│  │  • Cobrança   │  │    │  │  • Cobrança   │  │    │  │  • Cobrança   │  │
+│  │  • QR Code    │  │    │  │  • QR Code    │  │    │  │  • QR Code    │  │
+│  │  • Devolução  │  │    │  │  • Devolução  │  │    │  │  • Devolução  │  │
+│  └───────────────┘  │    │  └───────────────┘  │    │  └───────────────┘  │
+│  ┌───────────────┐  │    │  ┌───────────────┐  │    │  ┌───────────────┐  │
+│  │    CARTÃO     │  │    │  │    CARTÃO     │  │    │  │    CARTÃO     │  │
+│  │  • Tokenização│  │    │  │  • Tokenização│  │    │  │  • Tokenização│  │
+│  │  • 3D Secure  │  │    │  │  • 3D Secure  │  │    │  │  • 3D Secure  │  │
+│  │  • Antifraude │  │    │  │  • Antifraude │  │    │  │  • Antifraude │  │
+│  └───────────────┘  │    │  └───────────────┘  │    │  └───────────────┘  │
+└─────────────────────┘    └─────────────────────┘    └─────────────────────┘
                                        │
                                        ▼
                               ┌─────────────────┐
@@ -288,21 +356,83 @@ audit_logs        → Registro imutável de ações
 └─────────────────────────────────────────────────────────────────────────────┘
 ```
 
-### Fluxo de Pagamento Pix
+### Como Funciona o Roteamento MultiPSP
+
+```
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                         FLUXO DE DECISÃO DO ROUTER                          │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+                         ┌─────────────────────┐
+                         │  Nova Transação     │
+                         │  (Pix ou Cartão)    │
+                         └──────────┬──────────┘
+                                    │
+                                    ▼
+                         ┌─────────────────────┐
+                         │  1. Health Check    │
+                         │  Quais PSPs estão   │
+                         │  disponíveis?       │
+                         └──────────┬──────────┘
+                                    │
+                    ┌───────────────┼───────────────┐
+                    ▼               ▼               ▼
+              ┌──────────┐   ┌──────────┐   ┌──────────┐
+              │ PSP #1   │   │ PSP #2   │   │ PSP #3   │
+              │ ✅ Online │   │ ❌ Offline│   │ ✅ Online │
+              └──────────┘   └──────────┘   └──────────┘
+                    │                               │
+                    └───────────────┬───────────────┘
+                                    ▼
+                         ┌─────────────────────┐
+                         │  2. Seleção por     │
+                         │  Critério           │
+                         └──────────┬──────────┘
+                                    │
+              ┌─────────────────────┼─────────────────────┐
+              ▼                     ▼                     ▼
+     ┌─────────────────┐   ┌─────────────────┐   ┌─────────────────┐
+     │  Por Taxa       │   │  Por Tipo       │   │  Por Prioridade │
+     │  (menor custo)  │   │  (Pix/Cartão)   │   │  (configurado)  │
+     └─────────────────┘   └─────────────────┘   └─────────────────┘
+                                    │
+                                    ▼
+                         ┌─────────────────────┐
+                         │  3. Executa no PSP  │
+                         │  Selecionado        │
+                         └──────────┬──────────┘
+                                    │
+                    ┌───────────────┴───────────────┐
+                    ▼                               ▼
+           ┌─────────────────┐             ┌─────────────────┐
+           │  ✅ Sucesso      │             │  ❌ Falha        │
+           │  Retorna txid   │             │  Tenta próximo  │
+           │  e QR Code      │             │  PSP disponível │
+           └─────────────────┘             └────────┬────────┘
+                                                    │
+                                                    ▼
+                                           ┌─────────────────┐
+                                           │  Failover para  │
+                                           │  PSP alternativo│
+                                           └─────────────────┘
+```
+
+### Fluxo de Pagamento Pix (MultiPSP)
 
 ```
 ┌──────────┐    ┌──────────────┐    ┌──────────────┐    ┌──────────────┐
-│ Cliente  │───▶│ Orbyon Pay   │───▶│ Proxy mTLS   │───▶│  Efí Bank    │
-│ (Payer)  │    │ (Backend)    │    │ (EC2)        │    │  (API Pix)   │
+│ Cliente  │───▶│ Orbyon Pay   │───▶│ PSP Router   │───▶│  PSP Ativo   │
+│ (Payer)  │    │ (Backend)    │    │ (Seleção)    │    │  (API Pix)   │
 └──────────┘    └──────────────┘    └──────────────┘    └──────────────┘
      │                 │                   │                   │
      │  1. Solicita    │                   │                   │
      │     pagamento   │                   │                   │
      │────────────────▶│                   │                   │
-     │                 │  2. POST /v2/cob  │                   │
-     │                 │   (mTLS auth)     │                   │
+     │                 │  2. Seleciona     │                   │
+     │                 │     melhor PSP    │                   │
      │                 │──────────────────▶│                   │
-     │                 │                   │  3. Cria cobrança │
+     │                 │                   │  3. POST /cob     │
+     │                 │                   │   (mTLS auth)     │
      │                 │                   │──────────────────▶│
      │                 │                   │                   │
      │                 │                   │  4. txid + QR     │
@@ -328,77 +458,76 @@ audit_logs        → Registro imutável de ações
      │◀────────────────│                   │                   │
 ```
 
-### Fluxo de Pagamento Cartão de Crédito
+### Fluxo de Pagamento Cartão de Crédito (MultiPSP)
 
 ```
 ┌──────────┐    ┌──────────────┐    ┌──────────────┐    ┌──────────────┐
-│ Cliente  │───▶│ Orbyon Pay   │───▶│ Proxy mTLS   │───▶│  Efí Bank    │
-│ (Payer)  │    │ (Backend)    │    │ (EC2)        │    │  (API Card)  │
+│ Cliente  │───▶│ Orbyon Pay   │───▶│ PSP Router   │───▶│  PSP Ativo   │
+│ (Payer)  │    │ (Backend)    │    │ (Seleção)    │    │  (API Card)  │
 └──────────┘    └──────────────┘    └──────────────┘    └──────────────┘
      │                 │                   │                   │
      │  1. Dados do    │                   │                   │
      │     cartão      │                   │                   │
      │────────────────▶│                   │                   │
-     │                 │  2. Tokeniza      │                   │
-     │                 │     cartão        │                   │
+     │                 │  2. Seleciona     │                   │
+     │                 │     melhor PSP    │                   │
      │                 │──────────────────▶│                   │
-     │                 │                   │  3. Gera token    │
+     │                 │                   │  3. Tokeniza      │
      │                 │                   │──────────────────▶│
      │                 │                   │  4. payment_token │
      │                 │◀──────────────────────────────────────│
      │                 │                   │                   │
-     │                 │  5. Autoriza      │                   │
-     │                 │     pagamento     │                   │
-     │                 │──────────────────▶│                   │
-     │                 │                   │  6. Processa      │
+     │                 │                   │  5. Autoriza      │
      │                 │                   │──────────────────▶│
      │                 │                   │                   │
-     │                 │                   │  7. Resposta      │
+     │                 │                   │  6. Resposta      │
      │                 │                   │     (approved/    │
      │                 │                   │      declined)    │
      │                 │◀──────────────────────────────────────│
      │                 │                   │                   │
-     │  8. Resultado   │                   │                   │
+     │  7. Resultado   │                   │                   │
      │◀────────────────│                   │                   │
      │                 │                   │                   │
-     │                 │  9. Webhook       │                   │
+     │                 │  8. Webhook       │                   │
      │                 │     (status)      │                   │
      │                 │◀──────────────────────────────────────│
 ```
 
-### Endpoints Efí Bank Utilizados
+### Interface Padrão do PSP Adapter
 
-| Categoria | Endpoint | Método | Descrição |
-|-----------|----------|--------|-----------|
-| **Auth** | `/oauth/token` | POST | Geração de access_token (OAuth 2.0) |
-| **Pix** | `/v2/cob` | POST | Criar cobrança imediata |
-| **Pix** | `/v2/cob/:txid` | GET | Consultar cobrança |
-| **Pix** | `/v2/pix/:e2eid/devolucao/:id` | PUT | Solicitar devolução |
-| **Pix** | `/v2/webhook/:chave` | PUT | Configurar webhook |
-| **Cartão** | `/v1/card/payment` | POST | Criar pagamento com cartão |
-| **Cartão** | `/v1/card/payment/:id` | GET | Consultar pagamento |
-| **Cartão** | `/v1/card/payment/:id/refund` | POST | Estornar pagamento |
+Cada PSP implementa a mesma interface, garantindo intercambiabilidade:
 
-### Configuração mTLS
+| Método | Descrição | Retorno |
+|--------|-----------|---------|
+| `createPixCharge()` | Cria cobrança Pix | `{ txid, qrCode, pixCopiaECola, expiresAt }` |
+| `getPixCharge()` | Consulta status da cobrança | `{ status, paidAt, amount }` |
+| `refundPix()` | Solicita devolução | `{ refundId, status }` |
+| `tokenizeCard()` | Tokeniza dados do cartão | `{ paymentToken, brand, last4 }` |
+| `authorizeCard()` | Autoriza pagamento | `{ chargeId, status, authCode }` |
+| `captureCard()` | Captura pagamento autorizado | `{ status }` |
+| `refundCard()` | Estorna pagamento | `{ refundId, status }` |
+| `healthCheck()` | Verifica disponibilidade | `{ available: boolean, latency }` |
+
+### Configuração mTLS por PSP
 
 | Componente | Descrição |
 |------------|-----------|
-| **Certificado Cliente** | `client.p12` (PKCS#12) fornecido pela Efí |
-| **CA Efí** | `ca.pem` para validação do servidor |
-| **Ambiente** | Produção: `pix.api.efipay.com.br` / Sandbox: `pix-h.api.efipay.com.br` |
+| **Certificados** | Cada PSP possui seu próprio par de certificados (client.p12 + ca.pem) |
+| **Isolamento** | Certificados armazenados em diretórios separados por PSP |
+| **Rotação** | Suporte a rotação de certificados sem downtime |
 | **Proxy** | Nginx + Node.js em EC2 com PM2 |
-| **Porta** | 443 (HTTPS com mTLS) |
+| **Protocolo** | TLS 1.2+ com autenticação mútua |
 
-### Webhooks Processados
+### Webhooks Processados (Normalizados)
 
-| Evento | Origem | Ação na Orbyon Pay |
-|--------|--------|-------------------|
-| `pix.received` | Efí Pix | Confirma pagamento, credita saldo, notifica vendedor |
-| `pix.refund` | Efí Pix | Registra devolução, debita saldo |
-| `card.approved` | Efí Cartão | Confirma transação, agenda liberação de saldo |
-| `card.declined` | Efí Cartão | Marca como falha, notifica cliente |
-| `card.refunded` | Efí Cartão | Processa estorno, ajusta saldo |
-| `card.chargeback` | Efí Cartão | Abre disputa, bloqueia valor, notifica vendedor |
+| Evento Normalizado | Descrição | Ação na Orbyon Pay |
+|-------------------|-----------|-------------------|
+| `payment.received` | Pagamento Pix confirmado | Credita saldo, notifica vendedor |
+| `payment.refunded` | Devolução processada | Debita saldo, registra devolução |
+| `card.approved` | Cartão autorizado/capturado | Agenda liberação de saldo |
+| `card.declined` | Cartão recusado | Marca como falha, notifica cliente |
+| `card.refunded` | Estorno processado | Ajusta saldo |
+| `card.chargeback` | Contestação recebida | Abre disputa, bloqueia valor |
 
 ### Gestão de Saldo
 
@@ -436,6 +565,17 @@ audit_logs        → Registro imutável de ações
 | `refunded` | Devolvido ao pagador | (final) |
 | `expired` | Expirou sem pagamento | (final) |
 
+### Vantagens da Arquitetura MultiPSP
+
+| Benefício | Descrição |
+|-----------|-----------|
+| **Resiliência** | Falha em um PSP não afeta a operação — failover automático |
+| **Negociação** | Poder de barganha com múltiplos provedores |
+| **Otimização** | Roteamento por menor taxa ou melhor performance |
+| **Compliance** | Cada PSP pode ter regras específicas de compliance |
+| **Escalabilidade** | Adicionar novos PSPs sem refatorar o core |
+| **Independência** | Não há lock-in com nenhum provedor específico |
+
 ---
 
 ## 🔐 Segurança e Proteção de Dados
@@ -468,7 +608,7 @@ audit_logs        → Registro imutável de ações
 |------|---------------|
 | **Autenticação** | JWT com refresh automático, 2FA via TOTP, lockout progressivo |
 | **Autorização** | RBAC multi-tenant com isolamento por `org_id` |
-| **Dados de Cartão** | Tokenização via Efí Bank, nunca armazenamos PAN completo |
+| **Dados de Cartão** | Tokenização via PSP, nunca armazenamos PAN completo |
 | **Comunicação** | HTTPS obrigatório, mTLS para webhooks críticos |
 | **Validação** | Schemas Zod em todas as entradas, sanitização de dados |
 | **Idempotência** | Chaves de idempotência em transações e webhooks |
@@ -479,7 +619,7 @@ audit_logs        → Registro imutável de ações
 - ✅ **PCI DSS** — Padrões de segurança para dados de cartão
 - ✅ **LGPD** — Lei Geral de Proteção de Dados Pessoais
 - ✅ **BACEN** — Normas do Banco Central para arranjos de pagamento
-- ✅ **3D Secure 2.0** — Autenticação forte em transações de cartão via Efí Bank
+- ✅ **3D Secure 2.0** — Autenticação forte em transações de cartão via PSPs integrados
 
 ---
 
@@ -561,6 +701,17 @@ audit_logs        → Registro imutável de ações
 
 ## 🚀 Visão de Futuro
 
+### Funcionalidades Implementadas
+
+- ✅ **Arquitetura MultiPSP** — Integração com múltiplos provedores de pagamento
+- ✅ **Pix Instantâneo** — Cobrança imediata com QR Code dinâmico
+- ✅ **Cartão de Crédito** — Tokenização, parcelamento e 3D Secure
+- ✅ **Ledger Double-Entry** — Gestão de saldo com auditoria completa
+- ✅ **Sistema de Disputas** — Gestão de chargebacks e contestações
+- ✅ **KYC/KYB Completo** — Verificação de identidade para PF e PJ
+- ✅ **Painel Administrativo** — Gestão completa de operações
+- ✅ **Webhooks Resilientes** — Processamento idempotente com retry
+
 ### Roadmap
 
 - 🔜 **Pix Parcelado** — Parcelamento via Pix com antecipação
@@ -568,12 +719,14 @@ audit_logs        → Registro imutável de ações
 - 🔜 **Marketplace** — Suporte a múltiplos vendedores
 - 🔜 **SDK Mobile** — Integração nativa para apps iOS/Android
 - 🔜 **Open Finance** — Integração com ecossistema bancário aberto
+- 🔜 **Recorrência** — Assinaturas e cobranças recorrentes
 
 ### Posicionamento
 
 Foco no segmento de vendedores digitais e creators, com diferenciação por:
 
-- Qualidade técnica e segurança
+- Arquitetura MultiPSP para resiliência e melhores taxas
+- Qualidade técnica e segurança enterprise-grade
 - Suporte humanizado e transparência
 - Política FairPlay pró-vendedor
 - Taxas competitivas sem surpresas
@@ -608,8 +761,4 @@ Foco no segmento de vendedores digitais e creators, com diferenciação por:
 
 <p align="center">
   CNPJ: 64.387.452/0001-50 | Maringá/PR, Brasil
-</p>
-
-<p align="center">
-  <sub>Documento atualizado em Janeiro de 2026</sub>
 </p>
