@@ -1,5 +1,9 @@
 <p align="center">
-  <img src="https://cdn.discordapp.com/attachments/1291642266829459487/1458875321141952756/orbyon-pay-logo.png?ex=69613b05&is=695fe985&hm=450c69ac9e0d2e39dde407fd83d75847478972e9ddebd53d97a86f699974bb9e&" alt="Orbyon Pay" width="280" />
+  <img src="https://cdn.discordapp.com/attachments/1462600282641793024/1465790667258069043/ChatGPT_Image_27_de_jan._de_2026_15_48_49.png?ex=697b0c30&is=6979bab0&hm=57ec6b6ffe7e3c306cd905a7d8511d4349f328c8d03bba659b133fc0616c5dbb&" alt="Orbyon Pay" width="280" />
+</p>
+
+<p align="center">
+  <img src="src/assets/logos/orbyon-pay-logo.png" alt="Orbyon Pay" width="280" />
 </p>
 
 <h1 align="center">Orbyon Pay</h1>
@@ -761,4 +765,8 @@ Foco no segmento de vendedores digitais e creators, com diferenciação por:
 
 <p align="center">
   CNPJ: 64.387.452/0001-50 | Maringá/PR, Brasil
+</p>
+
+<p align="center">
+  <sub>Documento atualizado em Janeiro de 2026</sub>
 </p>
